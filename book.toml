@@ -1,0 +1,19 @@
+[book]
+title        = "pan2met-rs"
+authors      = ["Samuel Ortion"]
+description  = "predict metabolic pathways"
+language     = "en"
+multilingual = false
+src          = "website"
+
+[build]
+build-dir      = "public"
+create-missing = false
+
+[output.html]
+smart-punctuation = true
+mathjax-support = true
+git-repository-url = "https://github.com/sortion/pan2met-rs/"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/sortion/pan2met-rs/edit/main/docs/{path}"
+site-url = "https://pan2met-rs.github.io/pan2met-rs"
