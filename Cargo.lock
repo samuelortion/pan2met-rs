@@ -813,6 +813,7 @@ dependencies = [
  "log",
  "padmet",
  "peak_alloc",
+ "rule_kit",
  "stderrlog",
  "tempfile",
  "thiserror 2.0.18",
@@ -1015,6 +1016,15 @@ name = "regex-syntax"
 version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
+
+[[package]]
+name = "rule_kit"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e206623b9a621ced2c332e3724026384af409169aaf5dbbfaf0b9503f331c4f0"
+dependencies = [
+ "thiserror 2.0.18",
+]
 
 [[package]]
 name = "rustix"

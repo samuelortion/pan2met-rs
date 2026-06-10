@@ -1,0 +1,226 @@
+/* std use */
+use std::collections::HashSet;
+
+/* crate use */
+use rule_kit::Rule;
+
+/* project use */
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Decision {
+    Reject,
+    Accept,
+}
+
+#[derive(Debug)]
+pub struct PathwayInference<'a> {
+    pub pathway_id: &'a String,
+    pub catalyzed_reactions: &'a HashSet<String>,
+    pub pathway_classes: &'a HashSet<String>,
+    pub missing_reactions: &'a Vec<String>,
+    pub taxon_id: Option<u32>,
+    pub reaction_order: Option<Vec<String>>,
+    pub decision: Option<Decision>,
+}
+
+#[derive(Debug)]
+pub enum PathwayInferenceError {
+    AlreadyDecided,
+    NoReactionInPathway,
+    NoPathwayOntology,
+}
+
+impl<'a> PathwayInference<'a> {
+    pub fn new(
+        pathway_id: &'a String,
+        pathway_classes: &'a HashSet<String>,
+        catalyzed_reactions: &'a HashSet<String>,
+        missing_reactions: &'a Vec<String>,
+        taxon_id: Option<u32>,
+        reaction_order: Option<Vec<String>>,
+    ) -> Self {
+        PathwayInference {
+            pathway_id,
+            catalyzed_reactions,
+            pathway_classes,
+            missing_reactions,
+            taxon_id,
+            reaction_order,
+            decision: None,
+        }
+    }
+
+    pub fn reject(&mut self) -> Result<(), PathwayInferenceError> {
+        if self.decision.is_some() {
+            Err(PathwayInferenceError::AlreadyDecided)
+        } else {
+            self.decision = Some(Decision::Reject);
+            Ok(())
+        }
+    }
+
+    pub fn accept(&mut self) -> Result<(), PathwayInferenceError> {
+        if self.decision.is_some() {
+            Err(PathwayInferenceError::AlreadyDecided)
+        } else {
+            self.decision = Some(Decision::Accept);
+            Ok(())
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum PathwayInferenceRule {
+    TransportPathway,
+    SignalingPathway,
+    AllReactionsCatalyzed,
+    AllReactionsMissing,
+    OutOfTaxonomicRange,
+    KeyReaction,
+    SynthesisMissingLast,
+    DegradationMissingFirst,
+    EnergyMissingHalf,
+    PathwayScore,
+}
+
+impl PathwayInferenceRule {
+    pub fn all() -> Vec<PathwayInferenceRule> {
+        vec![
+            Self::TransportPathway,
+            Self::SignalingPathway,
+            Self::AllReactionsCatalyzed,
+            Self::AllReactionsMissing,
+            Self::OutOfTaxonomicRange,
+            Self::KeyReaction,
+            Self::SynthesisMissingLast,
+            Self::DegradationMissingFirst,
+            Self::EnergyMissingHalf,
+            Self::PathwayScore,
+        ]
+    }
+}
+
+impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
+    type RuleError = PathwayInferenceError;
+
+    fn name(&self) -> &str {
+        match self {
+            PathwayInferenceRule::TransportPathway => "TransportPathway",
+            PathwayInferenceRule::SignalingPathway => "SignalingPathway",
+            PathwayInferenceRule::AllReactionsCatalyzed => "AllReactionsCatalyzed",
+            PathwayInferenceRule::AllReactionsMissing => "AllReactionsMissing",
+            PathwayInferenceRule::OutOfTaxonomicRange => "AllReactionsMissing",
+            PathwayInferenceRule::KeyReaction => "KeyReaction",
+            PathwayInferenceRule::SynthesisMissingLast => "SynthesisMissingLast",
+            PathwayInferenceRule::DegradationMissingFirst => "DegradationMissingFirst",
+            PathwayInferenceRule::EnergyMissingHalf => "EnergyMissingHalf",
+            PathwayInferenceRule::PathwayScore => "PathwayScore",
+        }
+    }
+
+    fn priority(&self) -> u32 {
+        match self {
+            PathwayInferenceRule::TransportPathway => 1,
+            PathwayInferenceRule::SignalingPathway => 2,
+            PathwayInferenceRule::AllReactionsCatalyzed => 3,
+            PathwayInferenceRule::AllReactionsMissing => 4,
+            PathwayInferenceRule::OutOfTaxonomicRange => 5,
+            PathwayInferenceRule::KeyReaction => 6,
+            PathwayInferenceRule::SynthesisMissingLast => 7,
+            PathwayInferenceRule::DegradationMissingFirst => 8,
+            PathwayInferenceRule::EnergyMissingHalf => 9,
+            PathwayInferenceRule::PathwayScore => 10,
+        }
+    }
+
+    /// Return true if the rule can be evaluated.
+    fn evaluate(&self, ctx: &PathwayInference) -> Result<bool, Self::RuleError> {
+        match self {
+            PathwayInferenceRule::TransportPathway => {
+                if ctx.decision.is_some() {
+                    Ok(false) // We pass the rule, if we already have a decision.
+                } else {
+                    Ok(ctx.pathway_classes.contains("Transport-Pathways"))
+                }
+            }
+            PathwayInferenceRule::SignalingPathway => {
+                if ctx.decision.is_some() {
+                    Ok(false) // We pass the rule, if we already have a decision.
+                } else {
+                    Ok(ctx.pathway_classes.contains("Signaling-Pathways"))
+                }
+            }
+            PathwayInferenceRule::AllReactionsCatalyzed => {
+                if ctx.decision.is_some() {
+                    return Ok(false);
+                }
+                Ok(ctx.missing_reactions.is_empty())
+            }
+            PathwayInferenceRule::AllReactionsMissing => {
+                if ctx.decision.is_some() {
+                    return Ok(false);
+                }
+                Ok(ctx.missing_reactions.len() == ctx.catalyzed_reactions.len())
+            }
+            PathwayInferenceRule::OutOfTaxonomicRange => {
+                Ok(false) // TODO, for now disable it.
+            }
+            PathwayInferenceRule::KeyReaction => {
+                Ok(false) // TODO, for now, disable it.
+            }
+            PathwayInferenceRule::SynthesisMissingLast => {
+                if ctx.decision.is_some() {
+                    return Ok(false);
+                }
+                if let Some(order) = &ctx.reaction_order {
+                    let last_reaction = &order[order.len() - 1];
+                    return Ok(ctx.pathway_classes.contains("Biosynthesis")
+                        && ctx.missing_reactions.contains(last_reaction));
+                }
+                Ok(false)
+            }
+            PathwayInferenceRule::DegradationMissingFirst => {
+                if ctx.decision.is_some() {
+                    return Ok(false);
+                }
+                if let Some(order) = &ctx.reaction_order {
+                    let first_reaction = &order[0];
+                    Ok(ctx.pathway_classes.contains("Degradation")
+                        && ctx.missing_reactions.contains(first_reaction))
+                } else {
+                    Ok(false)
+                }
+            }
+            PathwayInferenceRule::EnergyMissingHalf => Ok(ctx.decision.is_none()
+                && ctx.pathway_classes.contains("Degradation")
+                && ctx.missing_reactions.len() > ctx.catalyzed_reactions.len() / 2),
+            PathwayInferenceRule::PathwayScore => {
+                if ctx.decision.is_some() {
+                    Ok(false)
+                } else {
+                    Ok(true) // Apply it by default.
+                }
+            }
+        }
+    }
+
+    /// Note: `apply` takes `&mut self` and `&mut ctx`, allowing rule and context mutation.
+    fn apply(&mut self, ctx: &mut PathwayInference) -> Result<(), Self::RuleError> {
+        match self {
+            PathwayInferenceRule::TransportPathway => ctx.reject(),
+            PathwayInferenceRule::SignalingPathway => ctx.reject(),
+            PathwayInferenceRule::AllReactionsCatalyzed => ctx.accept(),
+            PathwayInferenceRule::AllReactionsMissing => ctx.reject(),
+            PathwayInferenceRule::OutOfTaxonomicRange => ctx.reject(),
+            PathwayInferenceRule::KeyReaction => ctx.accept(),
+            PathwayInferenceRule::SynthesisMissingLast => ctx.reject(),
+            PathwayInferenceRule::DegradationMissingFirst => ctx.reject(),
+            PathwayInferenceRule::EnergyMissingHalf => ctx.reject(),
+            PathwayInferenceRule::PathwayScore => ctx.accept(),
+        }
+    }
+
+    fn before_apply(&self, ctx: &PathwayInference) {}
+
+    fn after_apply(&self, ctx: &PathwayInference) {}
+}

@@ -7,7 +7,7 @@
 /* project use */
 
 #[test]
-fn functional() -> pan2met-rs::error::Result<()> {
+fn functional() -> pan2met::error::Result<()> {
     let mut cmd = assert_cmd::Command::cargo_bin("pan2met-rs")?;
     cmd.args(["-i", "ACTGactg"]);
 

@@ -44,12 +44,17 @@ pub struct Arguments {
 impl Arguments {
     /// Get reactions input path
     pub fn reactions(&self) -> PathBuf {
-        self.reactions
+        self.reactions.clone()
     }
 
     /// Get reference PADMet file
     pub fn padmet(&self) -> PathBuf {
-        self.padmet
+        self.padmet.clone()
+    }
+
+    /// Get output filename
+    pub fn output(&self) -> PathBuf {
+        self.output.clone()
     }
 
     /// Get verbosity

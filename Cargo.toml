@@ -44,6 +44,7 @@ peak_alloc = { version = "0.3", optional = true }
 
 ## PADMet reading
 padmet = { path = "../padmet-rs" }
+rule_kit = "0.1.1"
 
 [dev-dependencies]
 ## Functional test

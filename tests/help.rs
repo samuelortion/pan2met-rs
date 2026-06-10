@@ -18,7 +18,7 @@ Options:
 ";
 
 #[test]
-fn help() -> pan2met-rs::error::Result<()> {
+fn help() -> pan2met::error::Result<()> {
     let mut cmd = assert_cmd::Command::cargo_bin("pan2met-rs")?;
     cmd.args(["-h"]);
 

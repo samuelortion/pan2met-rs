@@ -7,13 +7,12 @@
 /* module declaration */
 
 pub mod cli;
-
 pub mod error;
-
 pub mod inference;
+pub mod inference_rules;
+pub mod padmet;
 
 /* project use */
-
 
 #[cfg(test)]
 mod tests {
