@@ -815,6 +815,7 @@ dependencies = [
  "peak_alloc",
  "rule_kit",
  "stderrlog",
+ "taxonomy",
  "tempfile",
  "thiserror 2.0.18",
 ]
@@ -931,6 +932,15 @@ dependencies = [
  "wasi",
  "web-sys",
  "winapi",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffc053f057dd768a56f62cd7e434c42c831d296968997e9ac1f76ea7c2d14c41"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -1143,6 +1153,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "taxonomy"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f526335a2f439b24bd59d655d0fddeed2ee9ceffb79c9949ea82aa5373e670a9"
+dependencies = [
+ "memchr",
+ "quick-xml",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

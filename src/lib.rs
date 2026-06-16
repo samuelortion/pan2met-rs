@@ -8,6 +8,7 @@
 
 pub mod cli;
 pub mod error;
+pub mod taxonomy;
 pub mod inference;
 pub mod inference_rules;
 pub mod padmet;

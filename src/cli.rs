@@ -27,6 +27,10 @@ pub struct Arguments {
     #[clap(short = 'o', long = "output", help="Ouput list of metabolic pathways")]
     output: PathBuf,
 
+    /// Taxon identifier
+    #[clap(short = 't', long = "taxon-id", help="NCBI Taxonomy identifier")]
+    taxon_id: Option<u32>,
+    
     // Generic parameter
     /// Silence all output
     #[clap(short = 'q', long = "quiet")]
@@ -35,6 +39,7 @@ pub struct Arguments {
     /// Verbose mode (-v, -vv, -vvv, etc)
     #[clap(short = 'v', long = "verbosity", action = clap::ArgAction::Count)]
     verbosity: u8,
+
 
     /// Timestamp (sec, ms, ns, none)
     #[clap(short = 'T', long = "timestamp")]
@@ -50,6 +55,11 @@ impl Arguments {
     /// Get reference PADMet file
     pub fn padmet(&self) -> PathBuf {
         self.padmet.clone()
+    }
+
+    /// Get a taxon id
+    pub fn taxon_id(&self) -> Option<u32> {
+        self.taxon_id
     }
 
     /// Get output filename

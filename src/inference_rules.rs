@@ -1,11 +1,17 @@
+//! # Decision rules for metabolic pathway inference
+//!
+
 /* std use */
 use std::collections::HashSet;
 
 /* crate use */
 use rule_kit::Rule;
+use taxonomy::GeneralTaxonomy;
 
 /* project use */
+use crate::taxonomy::taxid_is_parent_of_taxid;
 
+/// Final decision: reject or accept a metabolic pathway
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Decision {
     Reject,
@@ -18,9 +24,11 @@ pub struct PathwayInference<'a> {
     pub catalyzed_reactions: &'a HashSet<String>,
     pub pathway_classes: &'a HashSet<String>,
     pub missing_reactions: &'a Vec<String>,
-    pub taxon_id: Option<u32>,
-    pub reaction_order: Option<Vec<String>>,
+    pub taxon_id: Option<String>,
+    pub ncbi_taxonomy: &'a Option<taxonomy::GeneralTaxonomy>,
+    pub reaction_order: &'a Option<Vec<String>>,
     pub decision: Option<Decision>,
+    pub padmet_object: &'a padmet::spec::PadmetSpec,
 }
 
 #[derive(Debug)]
@@ -36,8 +44,10 @@ impl<'a> PathwayInference<'a> {
         pathway_classes: &'a HashSet<String>,
         catalyzed_reactions: &'a HashSet<String>,
         missing_reactions: &'a Vec<String>,
-        taxon_id: Option<u32>,
-        reaction_order: Option<Vec<String>>,
+        taxon_id: Option<String>,
+        ncbi_taxonomy: &'a Option<taxonomy::GeneralTaxonomy>,
+        reaction_order: &'a Option<Vec<String>>,
+        padmet_object: &'a padmet::spec::PadmetSpec,
     ) -> Self {
         PathwayInference {
             pathway_id,
@@ -45,8 +55,10 @@ impl<'a> PathwayInference<'a> {
             pathway_classes,
             missing_reactions,
             taxon_id,
+            ncbi_taxonomy,
             reaction_order,
             decision: None,
+            padmet_object,
         }
     }
 
@@ -152,21 +164,58 @@ impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
             }
             PathwayInferenceRule::AllReactionsCatalyzed => {
                 if ctx.decision.is_some() {
-                    return Ok(false);
+                    Ok(false)
+                } else {
+                    Ok(ctx.missing_reactions.is_empty())
                 }
-                Ok(ctx.missing_reactions.is_empty())
             }
             PathwayInferenceRule::AllReactionsMissing => {
                 if ctx.decision.is_some() {
-                    return Ok(false);
+                    Ok(false)
+                } else {
+                    Ok(ctx.missing_reactions.len() == ctx.catalyzed_reactions.len())
                 }
-                Ok(ctx.missing_reactions.len() == ctx.catalyzed_reactions.len())
             }
             PathwayInferenceRule::OutOfTaxonomicRange => {
-                Ok(false) // TODO, for now disable it.
+                if ctx.decision.is_some() {
+                    Ok(false)
+                } else {
+                    if let Some(taxon_id) = &ctx.taxon_id {
+                        if let Some(ranges) =
+                            crate::padmet::padmet_taxonomic_range(ctx.pathway_id, ctx.padmet_object)
+                        {
+                            for taxonomic_range in ranges {
+                                if let Some(true) = crate::taxonomy::taxid_is_parent_of_taxid(
+                                    &taxonomic_range,
+                                    &taxon_id,
+                                    ctx.ncbi_taxonomy.as_ref().unwrap(),
+                                ) {
+                                    return Ok(false);
+                                }
+                            }
+                            return Ok(true); // no taxonomic range encompasses the taxonomic id
+                        }
+                    }
+                    Ok(false)
+                }
             }
             PathwayInferenceRule::KeyReaction => {
-                Ok(false) // TODO, for now, disable it.
+                if ctx.decision.is_some() {
+                    return Ok(false);
+                } else {
+                    // Apply this rule, if any key reaction is missing
+                    if let Some(key_reactions) = crate::padmet::padmet_pathway_key_reactions(
+                        ctx.pathway_id,
+                        ctx.padmet_object,
+                    ) {
+                        for key_reaction in key_reactions {
+                            if ctx.missing_reactions.contains(&key_reaction) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                }
+                Ok(false)
             }
             PathwayInferenceRule::SynthesisMissingLast => {
                 if ctx.decision.is_some() {
