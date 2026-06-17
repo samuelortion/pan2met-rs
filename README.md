@@ -25,11 +25,11 @@ cd
 cargo install --path
 ```
 
-## How to cite
+<!-- ## How to cite
 
 ```
 Samuel Ortion, pan2met-rs: predict metabolic pathways, JOSS, https://doi.org/XXXXXXX
-```
+``` -->
 
 ## Minimum Supported Rust Version
 
