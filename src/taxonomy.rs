@@ -7,13 +7,14 @@ use taxonomy::Taxonomy;
 pub fn taxid_is_parent_of_taxid(
     parent_taxid: &str,
     child_taxid: &str,
-    tax: &taxonomy::GeneralTaxonomy) -> Option<bool> {
+    tax: &taxonomy::GeneralTaxonomy,
+) -> Option<bool> {
     for child in tax.traverse(parent_taxid).unwrap() {
         if child.0 == child_taxid {
             return Some(true);
         }
     }
-    return Some(false);
+    Some(false)
 }
 
 #[cfg(test)]

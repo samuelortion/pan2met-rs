@@ -16,21 +16,25 @@ use std::path::PathBuf;
 )]
 pub struct Arguments {
     /// Input path to a file listing reactions
-    #[clap(short = 'r', long = "reactions", help="Input list of reactions")]
+    #[clap(short = 'r', long = "reactions", help = "Input list of reactions")]
     reactions: PathBuf,
 
     /// Input PADMet reference knowledge base
-    #[clap(long = "reference", help="Reference PADMet file")]
+    #[clap(long = "reference", help = "Reference PADMet file")]
     padmet: PathBuf,
 
     /// Ouput path to a file listing predicted metabolic pathways
-    #[clap(short = 'o', long = "output", help="Ouput list of metabolic pathways")]
+    #[clap(
+        short = 'o',
+        long = "output",
+        help = "Ouput list of metabolic pathways"
+    )]
     output: PathBuf,
 
     /// Taxon identifier
-    #[clap(short = 't', long = "taxon-id", help="NCBI Taxonomy identifier")]
+    #[clap(short = 't', long = "taxon-id", help = "NCBI Taxonomy identifier")]
     taxon_id: Option<u32>,
-    
+
     // Generic parameter
     /// Silence all output
     #[clap(short = 'q', long = "quiet")]
@@ -39,7 +43,6 @@ pub struct Arguments {
     /// Verbose mode (-v, -vv, -vvv, etc)
     #[clap(short = 'v', long = "verbosity", action = clap::ArgAction::Count)]
     verbosity: u8,
-
 
     /// Timestamp (sec, ms, ns, none)
     #[clap(short = 'T', long = "timestamp")]

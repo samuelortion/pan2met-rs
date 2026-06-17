@@ -5,8 +5,7 @@
 /* std use */
 use std::collections::HashSet;
 use std::fs::File;
-use std::io::{self, BufRead, Write};
-use std::path::Path;
+use std::io::Write;
 
 /* crate use */
 use anyhow::Context as _;
@@ -21,27 +20,9 @@ use pan2met::{cli, inference};
 
 use pan2met::padmet::{padmet_pathway_ontology, padmet_reaction_order};
 
-// The output is wrapped in a Result to allow matching on errors.
-// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
+mod input;
 
-fn read_set<P>(filename: P) -> io::Result<HashSet<String>>
-where
-    P: AsRef<Path>,
-{
-    let lines = read_lines(filename)?;
-    let mut set: HashSet<String> = HashSet::new();
-    for line in lines.map_while(Result::ok) {
-        set.insert(line);
-    }
-    Ok(set)
-}
+use input::read_set;
 
 /// Run the inference
 fn pathway_inference(
@@ -73,14 +54,13 @@ fn pathway_inference(
             .build();
 
         let res = engine.evaluate_all(&mut inference);
-        if res.is_ok() {
-            if inference
+        if res.is_ok()
+            && inference
                 .decision
                 .unwrap_or(inference_rules::Decision::Reject)
                 == inference_rules::Decision::Accept
-            {
-                infered.push(pathway);
-            }
+        {
+            infered.push(pathway);
         }
     }
     infered
@@ -113,23 +93,24 @@ fn main() -> error::Result<()> {
         if tax.to_internal_index(&taxon_id.to_string()).is_err() {
             log::error!("taxon id {taxon_id:#} not found in the NCBI-Taxonomy.");
             return Ok(());
-        } // Ensure NCBI-Taxonomy contains the given taxon id
+        }
+        // Ensure NCBI-Taxonomy contains the given taxon id
         else {
             tax_id = Some(taxon_id.to_string());
             some_taxonomy = Some(tax);
         }
     }
-    
+
     log::info!("Start a metabolic pathway prediction.");
     let rules = PathwayInferenceRule::all();
     let infered = pathway_inference(&reactome, &padmet_object, &rules, tax_id, &some_taxonomy);
-    
+
     let mut output_file = File::create(arguments.output())?;
     for pathway in infered {
         writeln!(output_file, "{pathway:#}")?;
     }
 
     log::info!("End a metabolic pathway prediction.");
-    
+
     Ok(())
 }

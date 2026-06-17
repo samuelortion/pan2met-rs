@@ -10,11 +10,11 @@ pub fn rev_comp_bench(c: &mut criterion::Criterion) {
     let seq = b"GTAAATTTCCAGTTCTTCAACCAGAAAGTAATAACTGCCAGGTGTACACT";
 
     c.bench_function("bit_op", |b| {
-        b.iter(|| criterion::black_box(pan2met-rs::rev_comp(criterion::black_box(seq))))
+        b.iter(|| criterion::black_box(pan2met - rs::rev_comp(criterion::black_box(seq))))
     });
 
     c.bench_function("match", |b| {
-        b.iter(|| criterion::black_box(pan2met-rs::rev_comp_match(criterion::black_box(seq))))
+        b.iter(|| criterion::black_box(pan2met - rs::rev_comp_match(criterion::black_box(seq))))
     });
 }
 

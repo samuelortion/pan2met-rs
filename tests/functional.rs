@@ -9,7 +9,7 @@
 #[test]
 fn functional() -> pan2met::error::Result<()> {
     let mut cmd = assert_cmd::Command::cargo_bin("pan2met-rs")?;
-    cmd.args(["--reactions", ]);
+    cmd.args(["--reactions"]);
 
     let assert = cmd.assert();
 

@@ -25,7 +25,7 @@ pub struct PathwayInference<'a> {
     pub pathway_classes: &'a HashSet<String>,
     pub missing_reactions: &'a Vec<String>,
     pub taxon_id: Option<String>,
-    pub ncbi_taxonomy: &'a Option<taxonomy::GeneralTaxonomy>,
+    pub ncbi_taxonomy: &'a Option<GeneralTaxonomy>,
     pub reaction_order: &'a Option<Vec<String>>,
     pub decision: Option<Decision>,
     pub padmet_object: &'a padmet::spec::PadmetSpec,
@@ -45,7 +45,7 @@ impl<'a> PathwayInference<'a> {
         catalyzed_reactions: &'a HashSet<String>,
         missing_reactions: &'a Vec<String>,
         taxon_id: Option<String>,
-        ncbi_taxonomy: &'a Option<taxonomy::GeneralTaxonomy>,
+        ncbi_taxonomy: &'a Option<GeneralTaxonomy>,
         reaction_order: &'a Option<Vec<String>>,
         padmet_object: &'a padmet::spec::PadmetSpec,
     ) -> Self {
@@ -83,15 +83,25 @@ impl<'a> PathwayInference<'a> {
 
 #[derive(Debug, Clone)]
 pub enum PathwayInferenceRule {
+    /// Reject if the pathway is a transport pathway
     TransportPathway,
+    /// Reject if the pathway is a signaling pathway
     SignalingPathway,
+    /// Accept if all reactions are catalyzed
     AllReactionsCatalyzed,
+    /// Reject if none of the non-spontaneous reactions are catalyzed
     AllReactionsMissing,
+    /// Reject if the pathway is out of the taxonomic range
     OutOfTaxonomicRange,
+    /// Reject if a key reaction is missing
     KeyReaction,
+    /// Reject if the pathway is a synthesis pathway (MetaCyc class "Biosynthesis") and is missing the last reaction leading the the metabolite of interest
     SynthesisMissingLast,
+    /// Reject if the pathway is a catabolysis pathway (MetaCyc class "Degradation") and is missing the first reaction degrading the metabolite of interest
     DegradationMissingFirst,
+    /// Reject if the pathway is a pathway of the energy metabolism and half non-spontaneous reactions are not catalyzed
     EnergyMissingHalf,
+    /// Accept the pathway if the score of the pathway is above a threshold
     PathwayScore,
 }
 
@@ -185,9 +195,9 @@ impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
                             crate::padmet::padmet_taxonomic_range(ctx.pathway_id, ctx.padmet_object)
                         {
                             for taxonomic_range in ranges {
-                                if let Some(true) = crate::taxonomy::taxid_is_parent_of_taxid(
+                                if let Some(true) = taxid_is_parent_of_taxid(
                                     &taxonomic_range,
-                                    &taxon_id,
+                                    taxon_id,
                                     ctx.ncbi_taxonomy.as_ref().unwrap(),
                                 ) {
                                     return Ok(false);
@@ -261,7 +271,7 @@ impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
             PathwayInferenceRule::AllReactionsCatalyzed => ctx.accept(),
             PathwayInferenceRule::AllReactionsMissing => ctx.reject(),
             PathwayInferenceRule::OutOfTaxonomicRange => ctx.reject(),
-            PathwayInferenceRule::KeyReaction => ctx.accept(),
+            PathwayInferenceRule::KeyReaction => ctx.reject(),
             PathwayInferenceRule::SynthesisMissingLast => ctx.reject(),
             PathwayInferenceRule::DegradationMissingFirst => ctx.reject(),
             PathwayInferenceRule::EnergyMissingHalf => ctx.reject(),
@@ -269,7 +279,20 @@ impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
         }
     }
 
-    fn before_apply(&self, ctx: &PathwayInference) {}
+    fn before_apply(&self, ctx: &PathwayInference) {
+        log::debug!(
+            "Apply rule {:?} to pathway {:?}",
+            self.name(),
+            ctx.pathway_id
+        );
+    }
 
-    fn after_apply(&self, ctx: &PathwayInference) {}
+    fn after_apply(&self, ctx: &PathwayInference) {
+        log::debug!(
+            "Decision after rule {:?} on pathway {:?}: {:?}",
+            self.name(),
+            ctx.pathway_id,
+            ctx.decision.as_ref().unwrap()
+        );
+    }
 }

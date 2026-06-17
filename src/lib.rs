@@ -8,10 +8,10 @@
 
 pub mod cli;
 pub mod error;
-pub mod taxonomy;
 pub mod inference;
 pub mod inference_rules;
 pub mod padmet;
+pub mod taxonomy;
 
 /* project use */
 
@@ -23,5 +23,4 @@ mod tests {
 
     /* project use */
     use super::*;
-    
 }
