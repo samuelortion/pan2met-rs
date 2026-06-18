@@ -9,7 +9,8 @@ use rule_kit::Rule;
 use taxonomy::GeneralTaxonomy;
 
 /* project use */
-use crate::taxonomy::taxid_is_parent_of_taxid;
+use crate::{pathway_score, taxonomy::taxid_is_parent_of_taxid};
+
 
 /// Final decision: reject or accept a metabolic pathway
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -22,6 +23,7 @@ pub enum Decision {
 pub struct PathwayInference<'a> {
     pub pathway_id: &'a String,
     pub catalyzed_reactions: &'a HashSet<String>,
+    pub reactome: &'a HashSet<String>,
     pub pathway_classes: &'a HashSet<String>,
     pub missing_reactions: &'a Vec<String>,
     pub taxon_id: Option<String>,
@@ -43,6 +45,7 @@ impl<'a> PathwayInference<'a> {
         pathway_id: &'a String,
         pathway_classes: &'a HashSet<String>,
         catalyzed_reactions: &'a HashSet<String>,
+        reactome: &'a HashSet<String>,
         missing_reactions: &'a Vec<String>,
         taxon_id: Option<String>,
         ncbi_taxonomy: &'a Option<GeneralTaxonomy>,
@@ -54,6 +57,7 @@ impl<'a> PathwayInference<'a> {
             catalyzed_reactions,
             pathway_classes,
             missing_reactions,
+            reactome,
             taxon_id,
             ncbi_taxonomy,
             reaction_order,
@@ -257,7 +261,8 @@ impl Rule<PathwayInference<'_>> for PathwayInferenceRule {
                 if ctx.decision.is_some() {
                     Ok(false)
                 } else {
-                    Ok(true) // Apply it by default.
+                    let score = pathway_score::PathwayScore::new(ctx.pathway_id, ctx.catalyzed_reactions, ctx.padmet_object, ctx.reactome);
+                    Ok(score.pathway_score() >= 0.35) 
                 }
             }
         }

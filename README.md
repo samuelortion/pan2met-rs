@@ -1,4 +1,4 @@
-# pan2met-rs 🧬 💻
+# pan2met-rs
 
 ![tests](https://github.com/sortion/pan2met-rs/workflows/tests/badge.svg)
 ![lints](https://github.com/sortion/pan2met-rs/workflows/lints/badge.svg)

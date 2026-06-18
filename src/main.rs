@@ -42,6 +42,7 @@ fn pathway_inference(
             &pathway,
             &pathway_classes,
             &pathway_reactions,
+            reactome,
             &missing_reactions,
             taxon_id.clone(),
             tax,
